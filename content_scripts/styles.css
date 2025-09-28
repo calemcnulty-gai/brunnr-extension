@@ -1,0 +1,149 @@
+/**
+ * Brunnr Extension Styles
+ * Styles for the injected video container
+ */
+
+.brunnr-video-container {
+  margin: 0 0 2rem 0;
+  padding: 1.5rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.brunnr-video-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.brunnr-video-title {
+  margin: 0 0 1rem 0;
+  padding: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.brunnr-video-player {
+  position: relative;
+  width: 100%;
+  margin: 0 0 0.75rem 0;
+  background-color: #000;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.brunnr-video-element {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 450px;
+  background-color: #000;
+}
+
+.brunnr-video-description {
+  margin: 0;
+  padding: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .brunnr-video-container {
+    padding: 1rem;
+    margin: 0 0 1.5rem 0;
+  }
+
+  .brunnr-video-title {
+    font-size: 1.25rem;
+  }
+
+  .brunnr-video-description {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .brunnr-video-container {
+    background-color: #1f2937;
+    border-color: #374151;
+  }
+
+  .brunnr-video-title {
+    color: #f9fafb;
+  }
+
+  .brunnr-video-description {
+    color: #9ca3af;
+  }
+}
+
+/* Loading state */
+.brunnr-video-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  background-color: #f3f4f6;
+  border-radius: 0.5rem;
+}
+
+.brunnr-video-loading::after {
+  content: '';
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: brunnr-spin 1s linear infinite;
+}
+
+@keyframes brunnr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error state */
+.brunnr-video-error {
+  padding: 1rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.375rem;
+  color: #991b1b;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+/* Hide container during loading */
+.brunnr-video-container[data-loading="true"] .brunnr-video-player {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f3f4f6;
+}
+
+.brunnr-video-container[data-loading="true"] .brunnr-video-element {
+  display: none;
+}
+
+/* Ensure video doesn't break page layout */
+.brunnr-video-container * {
+  box-sizing: border-box;
+}
+
+/* Override potential site styles */
+.brunnr-video-container video {
+  max-width: 100% !important;
+  height: auto !important;
+}

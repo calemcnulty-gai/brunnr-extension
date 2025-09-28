@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Brunnr Educational Enhancement",
+  "version": "1.0.0",
+  "description": "Enhances MathAcademy lessons with supplemental video content",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "identity",
+    "identity.email"
+  ],
+  "host_permissions": [
+    "https://mathacademy.com/*",
+    "https://www.mathacademy.com/*",
+    "https://api.brunnr.com/*",
+    "https://*.cloudfront.net/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://mathacademy.com/*",
+        "https://www.mathacademy.com/*"
+      ],
+      "js": ["content_scripts/mathacademy.js"],
+      "css": ["content_scripts/styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  }
+}

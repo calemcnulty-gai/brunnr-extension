@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "declaration": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": false,
+    "moduleResolution": "node",
+    "rootDir": "./",
+    "outDir": "./dist",
+    "sourceMap": true,
+    "inlineSources": true,
+    "sourceRoot": "/"
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.js",
+    "sst.config.ts",
+    "stacks/**/*",
+    "functions/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".sst"
+  ]
+}
