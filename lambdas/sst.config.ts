@@ -37,6 +37,10 @@ export default $config({
     // Performance tracking endpoint
     api.route("POST /api/analytics/performance", "functions/track-performance.handler");
 
+    // Pipeline webhook endpoint (Phase 8 Task 8.4)
+    // Called by video generation pipeline when new video is ready
+    api.route("POST /api/pipeline/video-ready", "functions/notify-video-ready.handler");
+
     return {
       api: api.url,
     };

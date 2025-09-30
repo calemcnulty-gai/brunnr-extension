@@ -15,14 +15,14 @@
   - Task 6.2: Update README ⏳
   - Task 6.3: Record demo video ⏳
 **Phase 7 (Future):** 0/3 tasks complete ⏳
-**Phase 8 (Pipeline Integration):** 3/5 tasks complete 🆕
+**Phase 8 (Pipeline Integration):** 4/5 tasks complete 🆕
   - Task 8.1: Add feature flag for struggle selection ✅ [COMPLETED]
   - Task 8.2: Database schema for pipeline ✅ [COMPLETED]
   - Task 8.3: Struggle logging to RDS ✅ [COMPLETED]
-  - Task 8.4: Pipeline webhook endpoint ⏳
+  - Task 8.4: Pipeline webhook endpoint ✅ [COMPLETED]
   - Task 8.5: Update extension behavior ⏳
 
-**Overall Progress:** 15/26 core tasks complete (58%)
+**Overall Progress:** 16/26 core tasks complete (62%)
 
 **Current Status:** ✅ Phase 1, 2, 3, 4 & core Phase 6 COMPLETE! Middleware fully documented and ready for team review.
 
@@ -1126,30 +1126,58 @@ npx sst deploy --stage dev
 
 ---
 
-### ⏳ Task 8.4: Create Pipeline Webhook Endpoint
-**New File:** `lambdas/functions/notify-video-ready.js`
+### ✅ Task 8.4: Create Pipeline Webhook Endpoint [COMPLETED]
+**Files:** 
+- `lambdas/functions/notify-video-ready.js` ✅ (new)
+- `lambdas/sst.config.ts` ✅ (route added)
 
 **Objective:** Allow video generation pipeline to notify middleware when new video is ready.
 
-**Endpoint:** `POST /api/pipeline/video-ready`
+**Completed Implementation:**
+- ✅ **Endpoint:** `POST /api/pipeline/video-ready`
+- ✅ **Validation:** Requires `skill_tag` and `video_url` (returns 400 if missing)
+- ✅ **Graceful error:** Returns 503 if RDS not configured
+- ✅ **Database updates:**
+  - Inserts/updates video in `video_catalog` table
+  - Marks all matching struggles as `video_generated = TRUE`
+  - Sets `generation_status = 'ready'`
+  - Updates `generation_completed_at` timestamp
 
-**Request:**
+**Request Format:**
 ```json
 {
   "skill_tag": "multiplication-7-8",
   "video_url": "https://cloudfront.net/times-7-8.mp4",
-  "video_id": "vid-123",
+  "video_id": "vid-mult-7-8",
   "title": "7 and 8 Times Tables",
-  "duration": 90
+  "duration": 90,
+  "thumbnail_url": "https://cloudfront.net/thumbnails/mult-7-8.jpg",
+  "grade_level": 4,
+  "topic": "multiplication"
 }
 ```
 
-**Logic:**
-1. Insert/update video in `video_catalog` table
-2. Mark all struggles with matching skill_tag as resolved
-3. Return success
+**Response Format:**
+```json
+{
+  "message": "Video catalog updated successfully",
+  "skill_tag": "multiplication-7-8",
+  "video_url": "https://cloudfront.net/times-7-8.mp4",
+  "struggles_resolved": 12,
+  "catalog_entry": { ... }
+}
+```
 
-**Add Route:** `sst.config.ts` line 30+
+**Testing:**
+- ✅ Deployed to dev and tested
+- ✅ Returns 503 when RDS not configured (expected)
+- ✅ Validation working (400 for missing fields)
+- ✅ Route added to API Gateway
+
+**Ready for RDS:** When Josh provisions RDS, this endpoint will:
+1. Add videos to catalog automatically
+2. Mark struggles as resolved
+3. Enable dynamic video selection (when feature flag ON)
 
 ---
 
@@ -1233,7 +1261,7 @@ npx sst deploy --stage dev
 - [x] Task 8.1: Add feature flag to validate-lesson.js ✅
 - [x] Task 8.2: Database schema for struggle_events and video_catalog ✅
 - [x] Task 8.3: Struggle logging to RDS (always runs) ✅
-- [ ] Task 8.4: Pipeline webhook endpoint (notify-video-ready.js)
+- [x] Task 8.4: Pipeline webhook endpoint (notify-video-ready.js) ✅
 - [ ] Task 8.5: Update extension to not replace video
 
 ---
