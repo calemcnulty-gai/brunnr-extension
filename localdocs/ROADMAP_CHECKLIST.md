@@ -15,14 +15,14 @@
   - Task 6.2: Update README ⏳
   - Task 6.3: Record demo video ⏳
 **Phase 7 (Future):** 0/3 tasks complete ⏳
-**Phase 8 (Pipeline Integration):** 2/5 tasks complete 🆕
+**Phase 8 (Pipeline Integration):** 3/5 tasks complete 🆕
   - Task 8.1: Add feature flag for struggle selection ✅ [COMPLETED]
   - Task 8.2: Database schema for pipeline ✅ [COMPLETED]
-  - Task 8.3: Struggle logging to RDS ⏳
+  - Task 8.3: Struggle logging to RDS ✅ [COMPLETED]
   - Task 8.4: Pipeline webhook endpoint ⏳
   - Task 8.5: Update extension behavior ⏳
 
-**Overall Progress:** 14/26 core tasks complete (54%)
+**Overall Progress:** 15/26 core tasks complete (58%)
 
 **Current Status:** ✅ Phase 1, 2, 3, 4 & core Phase 6 COMPLETE! Middleware fully documented and ready for team review.
 
@@ -1091,17 +1091,38 @@ mysql -h <rds-endpoint> -u admin -p < lambdas/database/schema.sql
 
 ---
 
-### ⏳ Task 8.3: Add Struggle Logging to validate-lesson.js
-**File:** `lambdas/functions/validate-lesson.js`
+### ✅ Task 8.3: Add Struggle Logging to validate-lesson.js [COMPLETED]
+**File:** `lambdas/functions/validate-lesson.js` ✅
 
 **Objective:** Always log struggles to RDS, regardless of feature flag state.
 
-**New Function:** `logStruggleEvent(struggle, lessonData, userEmail)`
-- Inserts into `struggle_events` table
-- Runs even when ENABLE_STRUGGLE_SELECTION=false
-- Gracefully handles missing RDS (logs to CloudWatch instead)
+**Completed Implementation:**
+- ✅ **New Function:** `logStruggleEvent(struggle, lessonData, userEmail)`
+  - Inserts into `struggle_events` table with all struggle context
+  - Runs ALWAYS when struggle detected (regardless of ENABLE_STRUGGLE_SELECTION flag)
+  - Gracefully handles missing RDS (logs to CloudWatch as fallback)
+  - Never fails the request - errors caught and logged only
+  
+- ✅ **Dynamic Import:** Uses ES6 dynamic import for database module
+- ✅ **Called from handler:** After video metadata generated, before response
+- ✅ **Deployed and tested:** Working in dev with CloudWatch fallback
 
-**Integration:** Call from handler after video metadata generated
+**Graceful Fallback Behavior:**
+- If `RDS_HOST` not set → Logs to CloudWatch with full struggle context
+- If RDS connection fails → Catches error, logs to CloudWatch, continues
+- Request never fails due to logging issues
+
+**Testing:**
+- ✅ Tested with struggle signal → Logs properly (CloudWatch fallback)
+- ✅ Tested without struggle → No logging, normal flow
+- ✅ Both return correct default video (feature flag OFF)
+
+**Next:** When RDS is provisioned:
+```bash
+npx sst secrets set RDS_HOST <endpoint> --stage dev
+npx sst deploy --stage dev
+# Struggles will automatically start logging to RDS!
+```
 
 ---
 
@@ -1211,7 +1232,7 @@ mysql -h <rds-endpoint> -u admin -p < lambdas/database/schema.sql
 ### Pipeline Integration (Phase 8) 🆕
 - [x] Task 8.1: Add feature flag to validate-lesson.js ✅
 - [x] Task 8.2: Database schema for struggle_events and video_catalog ✅
-- [ ] Task 8.3: Struggle logging to RDS (always runs)
+- [x] Task 8.3: Struggle logging to RDS (always runs) ✅
 - [ ] Task 8.4: Pipeline webhook endpoint (notify-video-ready.js)
 - [ ] Task 8.5: Update extension to not replace video
 

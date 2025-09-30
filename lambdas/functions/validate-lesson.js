@@ -1,9 +1,20 @@
 /**
  * Lambda function to validate if a lesson should show video
  * Updated: 2025-09-30
+ * 
+ * Phase 8: Now includes struggle logging to RDS for video pipeline integration
  */
 
 import { success, error, parseBody, getUserIdentifier } from '../shared/response.js';
+
+// Database module - imported dynamically to handle CommonJS/ES6 mix
+let db = null;
+async function getDb() {
+  if (!db) {
+    db = await import('../shared/database.js');
+  }
+  return db;
+}
 
 /**
  * Check if lesson is eligible for video
@@ -138,6 +149,77 @@ function getVideoMetadata(lessonData, struggle) {
 }
 
 /**
+ * Log struggle event to RDS for video generation pipeline
+ * This runs ALWAYS, regardless of ENABLE_STRUGGLE_SELECTION flag
+ * 
+ * Graceful fallback: If RDS not configured or fails, logs to CloudWatch only
+ */
+async function logStruggleEvent(struggle, lessonData, userEmail) {
+  // Validate struggle data
+  if (!struggle || !struggle.skill_tags || struggle.skill_tags.length === 0) {
+    console.log('[Pipeline] No struggle data to log');
+    return;
+  }
+  
+  // Check if RDS is configured
+  if (!process.env.RDS_HOST) {
+    console.log('[Pipeline] RDS not configured - struggle logged to CloudWatch only');
+    console.log('[Pipeline Data]', JSON.stringify({
+      user_email: userEmail || 'anonymous',
+      lesson_id: lessonData.lesson_id,
+      skill_tags: struggle.skill_tags,
+      question_text: struggle.question_text,
+      student_answer: struggle.student_answer,
+      correct_answer: struggle.correct_answer,
+      grade_level: lessonData.grade_level,
+      topic: lessonData.topic
+    }));
+    return;
+  }
+  
+  // Attempt to log to RDS
+  try {
+    console.log('[Pipeline] Logging struggle to RDS:', struggle.skill_tags);
+    
+    const database = await getDb();
+    await database.query(`
+      INSERT INTO struggle_events (
+        user_email, lesson_id, question_id, question_text,
+        student_answer, correct_answer, skill_tags,
+        grade_level, topic, subject, page_url, session_id,
+        generation_status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+    `, [
+      userEmail || 'anonymous',
+      lessonData.lesson_id || null,
+      struggle.question_id || null,
+      struggle.question_text || '',
+      struggle.student_answer || '',
+      struggle.correct_answer || '',
+      JSON.stringify(struggle.skill_tags),
+      lessonData.grade_level || null,
+      lessonData.topic || null,
+      lessonData.subject || 'math',
+      lessonData.lesson_url || null,
+      struggle.session_id || null
+    ]);
+    
+    console.log('[Pipeline] ✓ Struggle logged to RDS successfully');
+    
+  } catch (err) {
+    // Graceful degradation - don't fail the request if logging fails
+    console.error('[Pipeline] Failed to log struggle to RDS (falling back to CloudWatch):', err.message);
+    console.log('[Pipeline Data]', JSON.stringify({
+      user_email: userEmail || 'anonymous',
+      lesson_id: lessonData.lesson_id,
+      skill_tags: struggle.skill_tags,
+      question_text: struggle.question_text,
+      error: err.message
+    }));
+  }
+}
+
+/**
  * Lambda handler
  */
 export async function handler(event) {
@@ -178,10 +260,14 @@ export async function handler(event) {
     // Get video metadata
     const videoMetadata = getVideoMetadata(lessonData, lessonData.struggle);
     
-    console.log('Lesson eligible, returning video metadata');
+    // ALWAYS log struggles to RDS/CloudWatch (regardless of feature flag)
+    // This feeds the video generation pipeline
     if (lessonData.struggle) {
       console.log('Struggle signal detected:', JSON.stringify(lessonData.struggle));
+      await logStruggleEvent(lessonData.struggle, lessonData, userIdentifier);
     }
+    
+    console.log('Lesson eligible, returning video metadata');
     
     return success({
       should_show_video: true,
