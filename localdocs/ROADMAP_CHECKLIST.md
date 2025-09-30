@@ -15,12 +15,20 @@
   - Task 6.2: Update README ⏳
   - Task 6.3: Record demo video ⏳
 **Phase 7 (Future):** 0/3 tasks complete ⏳
+**Phase 8 (Pipeline Integration):** 1/5 tasks complete 🆕
+  - Task 8.1: Add feature flag for struggle selection ✅ [COMPLETED]
+  - Task 8.2: Database schema for pipeline ⏳
+  - Task 8.3: Struggle logging to RDS ⏳
+  - Task 8.4: Pipeline webhook endpoint ⏳
+  - Task 8.5: Update extension behavior ⏳
 
-**Overall Progress:** 12/21 core tasks complete (57%)
+**Overall Progress:** 13/26 core tasks complete (50%)
 
 **Current Status:** ✅ Phase 1, 2, 3, 4 & core Phase 6 COMPLETE! Middleware fully documented and ready for team review.
 
-**Next Step:** Optional - Update README (6.2), record demo (6.3), or proceed to deployment (Phase 5).
+**New Directive (Sept 30):** Team wants default video for all (no struggle-based selection). Phase 8 implements this via feature flag while preserving Phase 1-3 work for future pipeline.
+
+**Next Step:** Implement Phase 8 (feature flag + pipeline prep) OR proceed to deployment (Phase 5) with current struggle-based logic.
 
 ---
 
@@ -1020,6 +1028,135 @@ Work with Lamar to identify:
 
 ---
 
+## Phase 8: Pipeline Integration & Feature Flag
+
+**See:** `localdocs/PHASE8_PIPELINE_INTEGRATION.md` for full details
+
+**Context:** Team directive (Sept 30, 2025) to remove struggle condition and show default video to all students for pilot.
+
+**Solution:** Feature flag pattern that allows toggling between:
+- **Pilot mode:** Default video only (ENABLE_STRUGGLE_SELECTION=false)
+- **Pipeline mode:** Struggle-based selection (ENABLE_STRUGGLE_SELECTION=true)
+
+### ✅ Task 8.1: Add Feature Flag to validate-lesson.js [COMPLETED]
+**Files:** 
+- `lambdas/functions/validate-lesson.js` ✅
+- `lambdas/sst.config.ts` ✅
+- `lambdas/test-feature-flag.js` ✅ (test script)
+
+**Objective:** Add `ENABLE_STRUGGLE_SELECTION` environment variable that controls video selection logic.
+
+**Completed Changes:**
+1. ✅ Check flag at start of `getVideoMetadata()`
+2. ✅ If false, always return default video (but still log struggles to console)
+3. ✅ If true, use existing struggle-based selection logic
+4. ✅ Add `selectionMode` field to response for tracking
+5. ✅ Set default value to "false" in sst.config.ts
+6. ✅ Local test passing (run `node test-feature-flag.js`)
+
+**Testing Completed:**
+- ✅ Local test script passing (all 4 test cases)
+- ⏳ Deploy with flag=false (next step)
+- ⏳ Verify all students get same video regardless of struggles
+- ⏳ Verify struggles still logged in CloudWatch
+
+---
+
+### ⏳ Task 8.2: Add Database Schema for Pipeline
+**File:** `lambdas/database/schema.sql`
+
+**Objective:** Create tables to support video generation pipeline integration.
+
+**New Tables:**
+1. **`struggle_events`** - Log all student struggles for pipeline consumption
+2. **`video_catalog`** - Dynamic video mapping (replaces hardcoded videoMap)
+3. **View: `pending_video_requests`** - Aggregated struggles awaiting video generation
+4. **Stored Procedure: `log_struggle_event`** - Insert struggles with threshold logic
+
+**When:** Set up RDS instance first, then run schema
+
+---
+
+### ⏳ Task 8.3: Add Struggle Logging to validate-lesson.js
+**File:** `lambdas/functions/validate-lesson.js`
+
+**Objective:** Always log struggles to RDS, regardless of feature flag state.
+
+**New Function:** `logStruggleEvent(struggle, lessonData, userEmail)`
+- Inserts into `struggle_events` table
+- Runs even when ENABLE_STRUGGLE_SELECTION=false
+- Gracefully handles missing RDS (logs to CloudWatch instead)
+
+**Integration:** Call from handler after video metadata generated
+
+---
+
+### ⏳ Task 8.4: Create Pipeline Webhook Endpoint
+**New File:** `lambdas/functions/notify-video-ready.js`
+
+**Objective:** Allow video generation pipeline to notify middleware when new video is ready.
+
+**Endpoint:** `POST /api/pipeline/video-ready`
+
+**Request:**
+```json
+{
+  "skill_tag": "multiplication-7-8",
+  "video_url": "https://cloudfront.net/times-7-8.mp4",
+  "video_id": "vid-123",
+  "title": "7 and 8 Times Tables",
+  "duration": 90
+}
+```
+
+**Logic:**
+1. Insert/update video in `video_catalog` table
+2. Mark all struggles with matching skill_tag as resolved
+3. Return success
+
+**Add Route:** `sst.config.ts` line 30+
+
+---
+
+### ⏳ Task 8.5: Update Extension Behavior
+**File:** `content_scripts/mathacademy.js`
+
+**Objective:** Modify `handleIncorrectAnswer()` to NOT replace video when feature flag is off.
+
+**Changes:**
+- Still send struggle data to middleware (for logging)
+- Don't call `injectVideo(..., replace=true)`
+- Log: "Struggle logged, video unchanged (feature flag disabled)"
+
+**Result:** Same default video stays visible throughout lesson, but struggles tracked for pipeline.
+
+---
+
+## Phase 8 Summary
+
+**Why Phase 8?**
+- Team wants default video only (pilot simplicity)
+- Don't throw away Phase 1-3 work (struggle detection, selection logic)
+- Prepare for video generation pipeline integration
+- Make switching modes trivial (one env var)
+
+**Timeline:** ~3.5 hours (can parallelize with RDS setup)
+
+**Benefits:**
+- ✅ Meets team directive (default video for all)
+- ✅ Preserves Phase 1-3 implementation
+- ✅ Logs struggles for pipeline consumption
+- ✅ Easy to enable struggle-based selection when videos ready
+- ✅ Webhook ready for pipeline integration
+
+**When to Deploy:**
+- Implement 8.1 immediately (feature flag)
+- Deploy with ENABLE_STRUGGLE_SELECTION=false
+- Complete 8.2-8.4 when RDS provisioned
+- Flip flag when video pipeline operational
+
+---
+
 ## Summary Checklist
 
 ### Backend (Lambdas)
@@ -1056,6 +1193,13 @@ Work with Lamar to identify:
 - [ ] Task 7.1: CloudWatch dashboards
 - [ ] Task 7.2: A/B testing framework
 - [ ] Task 7.3: TSA cohort data collection
+
+### Pipeline Integration (Phase 8) 🆕
+- [x] Task 8.1: Add feature flag to validate-lesson.js ✅
+- [ ] Task 8.2: Database schema for struggle_events and video_catalog
+- [ ] Task 8.3: Struggle logging to RDS (always runs)
+- [ ] Task 8.4: Pipeline webhook endpoint (notify-video-ready.js)
+- [ ] Task 8.5: Update extension to not replace video
 
 ---
 

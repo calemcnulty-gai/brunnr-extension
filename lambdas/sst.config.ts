@@ -14,8 +14,16 @@ export default $config({
       cors: true,  // Simplified CORS - allow all for now
     });
 
-    // Lesson validation endpoint
-    api.route("POST /api/lesson/validate", "functions/validate-lesson.handler");
+    // Lesson validation endpoint (with environment variables)
+    api.route("POST /api/lesson/validate", {
+      handler: "functions/validate-lesson.handler",
+      environment: {
+        // FEATURE FLAG: Controls struggle-based video selection
+        // false = default video only (TSA pilot mode)
+        // true = struggle-based targeted videos (future mode)
+        ENABLE_STRUGGLE_SELECTION: "false",
+      }
+    });
 
     // Video metadata endpoint  
     api.route("GET /api/video/metadata/{lessonId}", "functions/get-video-metadata.handler");

@@ -35,9 +35,40 @@ function isEligibleLesson(lessonData) {
 /**
  * Get video metadata for the lesson
  * If struggle signal is present, attempt to select a more specific video
+ * 
+ * FEATURE FLAG: ENABLE_STRUGGLE_SELECTION controls whether struggles affect video selection
+ * - false (default): Always return default video (pilot mode)
+ * - true: Use struggle-based selection (future mode)
  */
 function getVideoMetadata(lessonData, struggle) {
   const baseUrl = process.env.CLOUDFRONT_URL || 'https://d2zhlpwgezwmiu.cloudfront.net';
+  
+  // FEATURE FLAG: Check if struggle-based selection is enabled
+  const enableStruggleSelection = process.env.ENABLE_STRUGGLE_SELECTION === 'true';
+  
+  if (!enableStruggleSelection) {
+    console.log('[Feature Flag] Struggle selection DISABLED - returning default video for all students');
+    
+    // Log struggle for analytics/pipeline but don't use for selection
+    if (struggle && struggle.skill_tags && struggle.skill_tags.length > 0) {
+      console.log('[Pipeline Data] Struggle detected but not used for selection:', struggle.skill_tags);
+    }
+    
+    // Return default video for all students (TSA pilot mode)
+    return {
+      videoUrl: `${baseUrl}/grade4-multiplication-intro.mp4`,
+      title: 'Mastery in a Minute: Multiplication',
+      duration: 60,
+      thumbnailUrl: `${baseUrl}/thumbnails/grade4-multiplication.jpg`,
+      lessonId: lessonData.lesson_id,
+      gradeLevel: lessonData.grade_level,
+      topic: lessonData.topic,
+      selectionMode: 'default-only' // Track which mode was used
+    };
+  }
+  
+  // STRUGGLE-BASED SELECTION ENABLED (feature flag ON)
+  console.log('[Feature Flag] Struggle selection ENABLED - attempting targeted video matching');
   
   // If struggle signal present, try to match by skill tags
   if (struggle && struggle.skill_tags && struggle.skill_tags.length > 0) {
@@ -84,7 +115,8 @@ function getVideoMetadata(lessonData, struggle) {
           skillTags: struggle.skill_tags,
           lessonId: lessonData.lesson_id,
           gradeLevel: lessonData.grade_level,
-          topic: lessonData.topic
+          topic: lessonData.topic,
+          selectionMode: 'struggle-based' // Track which mode was used
         };
       }
     }
@@ -100,7 +132,8 @@ function getVideoMetadata(lessonData, struggle) {
     thumbnailUrl: `${baseUrl}/thumbnails/grade4-multiplication.jpg`,
     lessonId: lessonData.lesson_id,
     gradeLevel: lessonData.grade_level,
-    topic: lessonData.topic
+    topic: lessonData.topic,
+    selectionMode: 'default-fallback' // Track which mode was used
   };
 }
 
