@@ -1,8 +1,5 @@
 # Brunnr Extension - Middleware Architecture
 
-> **Answering Joshua's question:** *"i'm particularly interested in what the middleware looks like between the extension and the renderer"*
-
-**TL;DR:** The middleware is a serverless AWS Lambda layer that receives lesson context and struggle signals from the Chrome extension, selects appropriate video recommendations, and returns CloudFront URLs directly to the extension. No separate renderer service needed—videos are embedded directly from CDN.
 
 ---
 
