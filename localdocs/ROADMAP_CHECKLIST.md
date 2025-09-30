@@ -15,14 +15,14 @@
   - Task 6.2: Update README ⏳
   - Task 6.3: Record demo video ⏳
 **Phase 7 (Future):** 0/3 tasks complete ⏳
-**Phase 8 (Pipeline Integration):** 1/5 tasks complete 🆕
+**Phase 8 (Pipeline Integration):** 2/5 tasks complete 🆕
   - Task 8.1: Add feature flag for struggle selection ✅ [COMPLETED]
-  - Task 8.2: Database schema for pipeline ⏳
+  - Task 8.2: Database schema for pipeline ✅ [COMPLETED]
   - Task 8.3: Struggle logging to RDS ⏳
   - Task 8.4: Pipeline webhook endpoint ⏳
   - Task 8.5: Update extension behavior ⏳
 
-**Overall Progress:** 13/26 core tasks complete (50%)
+**Overall Progress:** 14/26 core tasks complete (54%)
 
 **Current Status:** ✅ Phase 1, 2, 3, 4 & core Phase 6 COMPLETE! Middleware fully documented and ready for team review.
 
@@ -1062,18 +1062,32 @@ Work with Lamar to identify:
 
 ---
 
-### ⏳ Task 8.2: Add Database Schema for Pipeline
-**File:** `lambdas/database/schema.sql`
+### ✅ Task 8.2: Add Database Schema for Pipeline [COMPLETED]
+**File:** `lambdas/database/schema.sql` ✅
 
 **Objective:** Create tables to support video generation pipeline integration.
 
-**New Tables:**
-1. **`struggle_events`** - Log all student struggles for pipeline consumption
-2. **`video_catalog`** - Dynamic video mapping (replaces hardcoded videoMap)
-3. **View: `pending_video_requests`** - Aggregated struggles awaiting video generation
-4. **Stored Procedure: `log_struggle_event`** - Insert struggles with threshold logic
+**Completed - New Tables Added:**
+1. ✅ **`struggle_events`** - Logs all student struggles with video generation tracking
+2. ✅ **`video_catalog`** - Dynamic video mapping (replaces hardcoded videoMap)
+3. ✅ **View: `pending_video_requests`** - Top 100 struggles awaiting videos (prioritized)
+4. ✅ **View: `video_performance_summary`** - Analytics on video effectiveness
+5. ✅ **Stored Procedure: `log_struggle_event`** - Insert struggles with 5+ threshold trigger
+6. ✅ **Stored Procedure: `mark_video_generated`** - Called by pipeline webhook
 
-**When:** Set up RDS instance first, then run schema
+**Schema Features:**
+- JSON skill_tags with functional index (MySQL 8.0+)
+- Priority scoring for video generation queue
+- A/B testing support in video_catalog
+- Performance tracking (completion rate, improvement metrics)
+- Automatic threshold detection (5+ struggles → trigger generation)
+
+**Status:** Schema written and ready to deploy when RDS is provisioned
+
+**Next:** Run schema when Josh provisions RDS
+```bash
+mysql -h <rds-endpoint> -u admin -p < lambdas/database/schema.sql
+```
 
 ---
 
@@ -1196,7 +1210,7 @@ Work with Lamar to identify:
 
 ### Pipeline Integration (Phase 8) 🆕
 - [x] Task 8.1: Add feature flag to validate-lesson.js ✅
-- [ ] Task 8.2: Database schema for struggle_events and video_catalog
+- [x] Task 8.2: Database schema for struggle_events and video_catalog ✅
 - [ ] Task 8.3: Struggle logging to RDS (always runs)
 - [ ] Task 8.4: Pipeline webhook endpoint (notify-video-ready.js)
 - [ ] Task 8.5: Update extension to not replace video
