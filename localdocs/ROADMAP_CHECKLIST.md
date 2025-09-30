@@ -15,14 +15,14 @@
   - Task 6.2: Update README ⏳
   - Task 6.3: Record demo video ⏳
 **Phase 7 (Future):** 0/3 tasks complete ⏳
-**Phase 8 (Pipeline Integration):** 4/5 tasks complete 🆕
+**Phase 8 (Pipeline Integration):** 5/5 tasks complete ✅ 🎉 [COMPLETE]
   - Task 8.1: Add feature flag for struggle selection ✅ [COMPLETED]
   - Task 8.2: Database schema for pipeline ✅ [COMPLETED]
   - Task 8.3: Struggle logging to RDS ✅ [COMPLETED]
   - Task 8.4: Pipeline webhook endpoint ✅ [COMPLETED]
-  - Task 8.5: Update extension behavior ⏳
+  - Task 8.5: Update extension behavior ✅ [COMPLETED]
 
-**Overall Progress:** 16/26 core tasks complete (62%)
+**Overall Progress:** 17/26 core tasks complete (65%)
 
 **Current Status:** ✅ Phase 1, 2, 3, 4 & core Phase 6 COMPLETE! Middleware fully documented and ready for team review.
 
@@ -1181,17 +1181,44 @@ npx sst deploy --stage dev
 
 ---
 
-### ⏳ Task 8.5: Update Extension Behavior
-**File:** `content_scripts/mathacademy.js`
+### ✅ Task 8.5: Update Extension Behavior [COMPLETED]
+**File:** `content_scripts/mathacademy.js` ✅
 
 **Objective:** Modify `handleIncorrectAnswer()` to NOT replace video when feature flag is off.
 
-**Changes:**
-- Still send struggle data to middleware (for logging)
-- Don't call `injectVideo(..., replace=true)`
-- Log: "Struggle logged, video unchanged (feature flag disabled)"
+**Completed Implementation:**
+- ✅ **Modified `handleIncorrectAnswer()`** function
+- ✅ **Always sends struggle data** to middleware (for logging/pipeline)
+- ✅ **Checks `selectionMode`** from API response
+  - If `'struggle-based'` → Replace video with targeted one (flag ON)
+  - If `'default-only'` or `'default-fallback'` → Don't replace, just log (flag OFF)
+- ✅ **Analytics still tracked** regardless of mode
 
-**Result:** Same default video stays visible throughout lesson, but struggles tracked for pipeline.
+**Behavior Change:**
+```javascript
+// Before (Task 8.5)
+handleIncorrectAnswer() {
+  // Send struggle
+  // ALWAYS replace video ❌ (wasteful when flag OFF)
+}
+
+// After (Task 8.5 complete)
+handleIncorrectAnswer() {
+  // Send struggle
+  if (selectionMode === 'struggle-based') {
+    // Replace video ✅ (flag ON)
+  } else {
+    // Don't replace ✅ (flag OFF - TSA pilot mode)
+    console.log('Struggle logged, video unchanged');
+  }
+}
+```
+
+**Result:** 
+- ✅ Same default video stays visible throughout lesson
+- ✅ Struggles still tracked and sent to middleware
+- ✅ No unnecessary DOM manipulation
+- ✅ Ready to activate struggle-based selection (just flip flag)
 
 ---
 
@@ -1257,12 +1284,12 @@ npx sst deploy --stage dev
 - [ ] Task 7.2: A/B testing framework
 - [ ] Task 7.3: TSA cohort data collection
 
-### Pipeline Integration (Phase 8) 🆕
+### Pipeline Integration (Phase 8) ✅ 🎉 [COMPLETE]
 - [x] Task 8.1: Add feature flag to validate-lesson.js ✅
 - [x] Task 8.2: Database schema for struggle_events and video_catalog ✅
 - [x] Task 8.3: Struggle logging to RDS (always runs) ✅
 - [x] Task 8.4: Pipeline webhook endpoint (notify-video-ready.js) ✅
-- [ ] Task 8.5: Update extension to not replace video
+- [x] Task 8.5: Update extension to not replace video ✅
 
 ---
 

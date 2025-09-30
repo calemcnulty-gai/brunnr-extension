@@ -641,10 +641,15 @@ function inferSkillTags(questionText) {
 }
 
 /**
- * Detect when student submits an incorrect answer and request video
+ * Detect when student submits an incorrect answer and log to middleware
+ * 
+ * Phase 8: Modified for feature flag support
+ * - Always sends struggle data to middleware (for logging/pipeline)
+ * - Only replaces video if struggle-based selection is enabled
+ * - Check selectionMode to determine behavior
  */
 async function handleIncorrectAnswer(quizElement, questionData) {
-  console.log('[Brunnr] Incorrect answer detected, requesting targeted video');
+  console.log('[Brunnr] Incorrect answer detected');
   
   const lessonData = extractLessonData();
   
@@ -660,7 +665,7 @@ async function handleIncorrectAnswer(quizElement, questionData) {
   
   console.log('[Brunnr] Struggle context:', struggle);
   
-  // Request video recommendation with struggle context
+  // Send struggle data to middleware (for logging/pipeline)
   const response = await chrome.runtime.sendMessage({
     type: 'VALIDATE_LESSON',
     data: {
@@ -670,8 +675,18 @@ async function handleIncorrectAnswer(quizElement, questionData) {
   });
   
   if (response && response.shouldShowVideo && response.videoMetadata) {
-    console.log('[Brunnr] Received targeted video recommendation:', response.videoMetadata);
-    await injectVideo(response.videoMetadata, true); // true = replace existing
+    const selectionMode = response.videoMetadata.selectionMode;
+    
+    // Check if we should replace the video
+    if (selectionMode === 'struggle-based') {
+      // Feature flag ON - replace with targeted video
+      console.log('[Brunnr] Feature flag ON - replacing with targeted video:', response.videoMetadata);
+      await injectVideo(response.videoMetadata, true);
+    } else {
+      // Feature flag OFF - don't replace video, just log
+      console.log('[Brunnr] Feature flag OFF - struggle logged, video unchanged');
+      console.log('[Brunnr] Selection mode:', selectionMode);
+    }
   }
   
   // Track the struggle event
