@@ -1,4 +1,4 @@
-import { StackContext, Api, Config, use } from "sst/constructs";
+/// <reference path="./.sst/platform/config.d.ts" />
 
 /**
  * Extension API Stack
@@ -76,7 +76,7 @@ export function ExtensionApiStack({ stack, app }: StackContext) {
       // Batch analytics
       "POST /api/analytics/batch": {
         function: {
-          handler: "functions/track-engagement.batchHandler",
+          handler: "functions/track-engagement-batch.handler",
         },
       },
       

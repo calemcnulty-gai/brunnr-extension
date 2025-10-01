@@ -13,11 +13,27 @@ let connectionPool = null;
  */
 async function getConnectionPool() {
   if (!connectionPool) {
+    // Try to load SST Resource (v3), fallback to env vars
+    let rdsHost, rdsPort, rdsUser, rdsPassword;
+    try {
+      const { Resource } = await import("sst");
+      rdsHost = Resource.RdsHost?.value || process.env.RDS_HOST;
+      rdsPort = Resource.RdsPort?.value || process.env.RDS_PORT || 3306;
+      rdsUser = Resource.RdsUser?.value || process.env.RDS_USER;
+      rdsPassword = Resource.RdsPassword?.value || process.env.RDS_PASSWORD;
+    } catch (e) {
+      // SST not available, use env vars
+      rdsHost = process.env.RDS_HOST;
+      rdsPort = process.env.RDS_PORT || 3306;
+      rdsUser = process.env.RDS_USER;
+      rdsPassword = process.env.RDS_PASSWORD;
+    }
+
     connectionPool = mysql.createPool({
-      host: process.env.RDS_HOST,
-      port: process.env.RDS_PORT || 3306,
-      user: process.env.RDS_USER,
-      password: process.env.RDS_PASSWORD,
+      host: rdsHost,
+      port: rdsPort,
+      user: rdsUser,
+      password: rdsPassword,
       database: process.env.RDS_DATABASE,
       
       // Lambda-optimized settings
